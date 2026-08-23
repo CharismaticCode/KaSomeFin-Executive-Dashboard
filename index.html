@@ -863,13 +863,16 @@
       const totalVaultVolume = allAccruals.reduce((sum, a) => sum + Number(a.amount || 0), 0);
       const totalSpendVolume = allTxns.reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
+      // Standard Accounting Formatter (e.g. 9,889.50)
+      const fmt = (num) => Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
       // KPI Elements
-      document.getElementById('kpiUsers').innerText = allUsers.length;
-      document.getElementById('kpiVaults').innerText = 'K' + totalVaultVolume.toFixed(2);
-      document.getElementById('kpiAccrualsCount').innerText = allAccruals.length + ' saved round-up accruals';
-      document.getElementById('kpiSpend').innerText = 'K' + totalSpendVolume.toFixed(2);
-      document.getElementById('kpiTxnCount').innerText = allTxns.length + ' alerts processed';
-      document.getElementById('kpiAvg').innerText = 'K' + (allAccruals.length ? (totalVaultVolume / allAccruals.length).toFixed(2) : '0.00');
+      document.getElementById('kpiUsers').innerText = allUsers.length.toLocaleString('en-US');
+      document.getElementById('kpiVaults').innerText = 'K' + fmt(totalVaultVolume);
+      document.getElementById('kpiAccrualsCount').innerText = allAccruals.length.toLocaleString('en-US') + ' saved round-up accruals';
+      document.getElementById('kpiSpend').innerText = 'K' + fmt(totalSpendVolume);
+      document.getElementById('kpiTxnCount').innerText = allTxns.length.toLocaleString('en-US') + ' alerts processed';
+      document.getElementById('kpiAvg').innerText = 'K' + (allAccruals.length ? fmt(totalVaultVolume / allAccruals.length) : '0.00');
 
       // Strategy Stats
       const k5Count = allUsers.filter(u => Number(u.settings?.strategy_base) === 5 || !u.settings?.strategy_base).length;
@@ -905,7 +908,7 @@
               </span>
             </td>
             <td style="color:var(--text-muted); font-weight:600;">K${u.settings?.safety_buffer || 50}</td>
-            <td style="font-weight:800; color:var(--tag-green-text);">+K${Number(u.totalSaved || 0).toFixed(2)}</td>
+            <td style="font-weight:800; color:var(--tag-green-text);">+K${Number(u.totalSaved || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td style="color:var(--text-faint); font-size:12.5px;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
           </tr>
         `;
@@ -923,8 +926,8 @@
         <tr>
           <td style="font-family:monospace; font-weight:700; color:var(--accent-forest);">${t.ref || 'TXN'}</td>
           <td style="font-weight:600;">${t.category || 'Transfer'}</td>
-          <td style="font-weight:800; color:var(--text-main);">K${Number(t.amount || 0).toFixed(2)}</td>
-          <td style="color:var(--text-muted);">${t.balance_after ? 'K' + Number(t.balance_after).toFixed(2) : '—'}</td>
+          <td style="font-weight:800; color:var(--text-main);">K${Number(t.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="color:var(--text-muted);">${t.balance_after ? 'K' + Number(t.balance_after).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
           <td style="color:var(--text-faint); font-size:12.5px;">${t.occurred_at ? new Date(t.occurred_at).toLocaleString() : '—'}</td>
         </tr>
       `).join('');
@@ -961,7 +964,7 @@
             <div class="cat-track">
               <div class="cat-fill" style="width:${pct}%; background:${col}"></div>
             </div>
-            <div class="cat-amount">K${amt.toFixed(2)} <span style="font-size:11px; color:var(--text-muted); font-weight:500;">(${pct}%)</span></div>
+            <div class="cat-amount">K${amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size:11px; color:var(--text-muted); font-weight:500;">(${pct}%)</span></div>
           </div>
         `;
       }).join('');
