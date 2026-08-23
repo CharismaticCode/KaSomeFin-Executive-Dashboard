@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KaSome.Fin — Executive Operations & Central Ledger</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23C6FF00%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 font-weight=%22bold%22 fill=%22%231A2117%22>K</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg-canvas: #F4F2EC;
+      --bg-sidebar: #17241D;
+      --bg-sidebar-active: #FFFFFF;
+      --text-sidebar-active: #17241D;
+      --text-sidebar-muted: #8E9C94;
+      --bg-card: #FFFFFF;
+      --bg-card-header: #FAFAF8;
+      --border-card: #E5E3DC;
+      --text-main: #19261E;
+      --text-muted: #6E7C74;
+      --text-faint: #9EA8A2;
+      --accent-lime: #C6FF00;
+      --accent-lime-dim: #D5FF4D;
+      --accent-green: #2B7A54;
+      --accent-forest: #0D3327;
+      --accent-gold: #D8AC58;
+      --tag-green-bg: #E8F5EE;
+      --tag-green-text: #206E49;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+    }
+
+    /* --- AUTH VIEW --- */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #273D32 0%, #111C16 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .auth-box {
+      background: #17261F;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 28px;
+      padding: 44px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      color: #F1F4F0;
+    }
+    .auth-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--accent-lime);
+      color: #17241D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 auto 20px;
+    }
+    .auth-input {
+      width: 100%;
+      height: 52px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      padding: 0 16px;
+      color: white;
+      font-size: 16px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    .auth-input:focus { border-color: var(--accent-lime); }
+    .auth-btn {
+      width: 100%;
+      height: 52px;
+      background: var(--accent-lime);
+      color: #17241D;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .auth-btn:active { transform: scale(0.98); }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      width: 250px;
+      background: var(--bg-sidebar);
+      padding: 28px 18px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 24px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--accent-lime);
+      color: #17241D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    .brand-text {
+      font-size: 19px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.4px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-sidebar-muted);
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .report-btn {
+      margin: 20px 0 24px 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #FFFFFF;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .report-btn:hover { background: rgba(255,255,255,0.12); }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--text-sidebar-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav-item.active {
+      background: var(--bg-sidebar-active);
+      color: var(--text-sidebar-active);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-weight: 700;
+    }
+    .nav-item:not(.active):hover {
+      background: rgba(255,255,255,0.04);
+      color: #FFFFFF;
+    }
+
+    .sidebar-footer {
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* --- MAIN CONTENT AREA --- */
+    .main-wrap {
+      flex: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+      max-width: 1440px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      color: var(--text-main);
+    }
+    .page-subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 0 16px;
+      height: 42px;
+      width: 280px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .search-input {
+      border: none;
+      outline: none;
+      font-size: 13px;
+      width: 100%;
+      background: transparent;
+    }
+
+    /* Top Control Bar */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .filter-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* KPI METRICS ROW */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
+    }
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-title {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .kpi-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .kpi-val {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      color: var(--text-main);
+      margin: 8px 0 4px 0;
+    }
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* DASHBOARD CONTENT GRID (2 COLUMNS: TABLE + VISUAL WIDGETS) */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 2fr 1.15fr;
+      gap: 22px;
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    /* Filter tabs inside panels */
+    .tab-group {
+      display: flex;
+      background: #F1EFEA;
+      padding: 3px;
+      border-radius: 10px;
+      gap: 3px;
+    }
+    .tab-pill {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      cursor: pointer;
+    }
+    .tab-pill.active {
+      background: #FFFFFF;
+      color: var(--text-main);
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* TABLES */
+    .rich-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .rich-table th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid #ECEAE4;
+    }
+    .rich-table td {
+      padding: 14px;
+      border-bottom: 1px solid #F1EFEA;
+      vertical-align: middle;
+    }
+    .rich-table tr:hover td {
+      background-color: #FAF9F6;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge-status.active {
+      background: var(--tag-green-bg);
+      color: var(--tag-green-text);
+    }
+    .badge-status.zonse {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    /* SEMI-CIRCLE PROGRESS GAUGE (LIKE GREENCO DESIGN) */
+    .gauge-card {
+      text-align: center;
+      padding: 10px 0 20px 0;
+    }
+    .gauge-wrapper {
+      position: relative;
+      width: 220px;
+      height: 110px;
+      margin: 0 auto 16px auto;
+      overflow: hidden;
+    }
+    .gauge-semi {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #C6FF00 0deg,
+        #2B7A54 120deg,
+        #D8AC58 160deg,
+        #EAE8E1 180deg 360deg
+      );
+      transform: rotate(270deg);
+      position: relative;
+    }
+    .gauge-inner {
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      top: 25px;
+      left: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 35px;
+    }
+    .gauge-pct {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      color: var(--text-main);
+    }
+    .gauge-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* METRIC STATS ROW UNDER GAUGE */
+    .gauge-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding-top: 16px;
+      border-top: 1px solid #ECEAE4;
+      text-align: center;
+    }
+    .gstat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .gstat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* HORIZONTAL HABIT / CATEGORY BREAKDOWN */
+    .cat-bar-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .cat-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .cat-pill {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+    .cat-track {
+      flex: 1;
+      height: 8px;
+      background: #F1EFEA;
+      border-radius: 99px;
+      margin: 0 14px;
+      overflow: hidden;
+    }
+    .cat-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--accent-lime);
+    }
+    .cat-amount {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="authView" class="auth-overlay">
+    <div class="auth-box">
+      <div class="auth-logo">K</div>
+      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 6px;">KaSome.Fin</h2>
+      <p style="font-size: 13px; color: #8E9C94; margin-bottom: 28px;">Executive Operations & Central Ledger Access</p>
+      <form onsubmit="handleLogin(event)">
+        <input id="passInput" class="auth-input" type="password" placeholder="Master Password" required autocomplete="current-password" />
+        <div id="errorMsg" style="display:none; color: #FF5252; font-size: 13px; margin-bottom: 14px; font-weight: 600;">Incorrect master password.</div>
+        <button class="auth-btn" type="submit">Unlock Executive Central</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">K</div>
+      <div>
+        <div class="brand-text">KaSome<span style="color:var(--accent-lime)">.Fin</span></div>
+        <div class="brand-sub">EXECUTIVE TELEMETRY</div>
+      </div>
+    </div>
+
+    <button onclick="window.print()" class="report-btn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Download PDF Report
+    </button>
+
+    <nav class="nav-list">
+      <div id="navDash" onclick="switchNav('dashboard')" class="nav-item active">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div id="navUsers" onclick="switchNav('users')" class="nav-item">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        User Profiles
+      </div>
+      <div id="navTxns" onclick="switchNav('txns')" class="nav-item">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Central Ledger
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div onclick="handleLogout()" class="nav-item" style="color: #FF7B72; padding: 10px 14px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Lock & Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN OPERATIONAL DASHBOARD -->
+  <main class="main-wrap">
+    
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div>
+        <h1 class="page-title">Executive Dashboard</h1>
+        <p class="page-subtitle">National Multi-Client Savings Telemetry · Live Central Ledger</p>
+      </div>
+
+      <div style="display:flex; align-items:center; gap: 14px;">
+        <div class="search-box">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-faint)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="searchInput" oninput="filterTables()" class="search-input" placeholder="Search user, mobile, reference..." />
+        </div>
+
+        <button onclick="loadLiveTelemetry()" class="filter-pill" style="cursor:pointer; background:#FFFFFF;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Refresh Live
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Scope Bar -->
+    <div class="filter-bar">
+      <div style="display:flex; align-items:center; gap: 10px;">
+        <span style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted);">OVERVIEW</span>
+        <div class="filter-pill">
+          <span style="width:8px; height:8px; border-radius:50%; background:#2B7A54;"></span>
+          All Accounts · Live Supabase Sync
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap: 10px;">
+        <div class="filter-pill">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span id="liveDate">Today</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 KPI CARDS -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Registered Users</span>
+          <div class="kpi-icon" style="background:#EBF3EE; color:#2B7A54;">👥</div>
+        </div>
+        <div id="kpiUsers" class="kpi-val">0</div>
+        <div class="kpi-sub">
+          <span style="color:#2B7A54; font-weight:700;">↗ Live Profiles</span> in Supabase Auth
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Vaults Collected</span>
+          <div class="kpi-icon" style="background:#F7FBE6; color:#789E00;">💰</div>
+        </div>
+        <div id="kpiVaults" class="kpi-val" style="color:#2B7A54;">K0.00</div>
+        <div id="kpiAccrualsCount" class="kpi-sub">0 saved round-up accruals</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Transacted Volume</span>
+          <div class="kpi-icon" style="background:#FEF7EE; color:#D8AC58;">📊</div>
+        </div>
+        <div id="kpiSpend" class="kpi-val">K0.00</div>
+        <div id="kpiTxnCount" class="kpi-sub">0 alerts processed</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Average Round-Up</span>
+          <div class="kpi-icon" style="background:#EFF6FF; color:#3B82F6;">⚡</div>
+        </div>
+        <div id="kpiAvg" class="kpi-val" style="color:#3B82F6;">K0.00</div>
+        <div class="kpi-sub">Per transaction saved</div>
+      </div>
+    </section>
+
+    <!-- 2-COLUMN DASHBOARD GRID -->
+    <section class="dashboard-layout">
+      
+      <!-- LEFT COLUMN: LIVE USER REPOSITORY & TRANSACTIONS -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">Central User & Ledger Stream</div>
+          <div class="tab-group">
+            <button id="tabBtnUsers" onclick="switchTableTab('users')" class="tab-pill active">Users</button>
+            <button id="tabBtnTxns" onclick="switchTableTab('txns')" class="tab-pill">Transactions</button>
+          </div>
+        </div>
+
+        <!-- USERS TABLE -->
+        <div id="tableUsersWrap" style="overflow-x:auto;">
+          <table class="rich-table">
+            <thead>
+              <tr>
+                <th>User / Name</th>
+                <th>Mobile Number</th>
+                <th>Strategy</th>
+                <th>Safety Buffer</th>
+                <th>Total Saved</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="6" style="text-align:center; padding:36px; color:var(--text-faint);">Loading live telemetry...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TRANSACTIONS TABLE -->
+        <div id="tableTxnsWrap" style="overflow-x:auto; display:none;">
+          <table class="rich-table">
+            <thead>
+              <tr>
+                <th>Ref ID</th>
+                <th>Category</th>
+                <th>Transacted</th>
+                <th>Balance After</th>
+                <th>Occurred At</th>
+              </tr>
+            </thead>
+            <tbody id="txnsTableBody">
+              <tr><td colspan="5" style="text-align:center; padding:36px; color:var(--text-faint);">Loading transactions...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: VISUAL GAUGES & CATEGORY BREAKDOWN -->
+      <div style="display:flex; flex-direction:column; gap:22px;">
+        
+        <!-- SEMI-CIRCLE GAUGE -->
+        <div class="panel-card gauge-card">
+          <div class="panel-header" style="margin-bottom:8px;">
+            <div class="panel-title">Vault Strategy Distribution</div>
+            <span style="font-size:12px; color:var(--text-muted); font-weight:600;">Active Users</span>
+          </div>
+
+          <div class="gauge-wrapper">
+            <div class="gauge-semi"></div>
+            <div class="gauge-inner">
+              <div id="gaugePct" class="gauge-pct">100%</div>
+              <div class="gauge-label">Panono Panono (K5)</div>
+            </div>
+          </div>
+
+          <div class="gauge-stats">
+            <div>
+              <div id="statTotalUsers" class="gstat-val">0</div>
+              <div class="gstat-lbl">Total</div>
+            </div>
+            <div>
+              <div id="statK5Users" class="gstat-val" style="color:#2B7A54;">0</div>
+              <div class="gstat-lbl">K5 Base</div>
+            </div>
+            <div>
+              <div id="statK10Users" class="gstat-val" style="color:#D8AC58;">0</div>
+              <div class="gstat-lbl">K10 Base</div>
+            </div>
+            <div>
+              <div id="statActiveRatio" class="gstat-val" style="color:#3B82F6;">100%</div>
+              <div class="gstat-lbl">Retention</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATEGORY SPEND BREAKDOWN -->
+        <div class="panel-card">
+          <div class="panel-header" style="margin-bottom:16px;">
+            <div class="panel-title">Spending Category Breakdown</div>
+            <span style="font-size:12px; color:var(--text-muted); font-weight:600;">SMS Alerts</span>
+          </div>
+
+          <div id="categoryBreakdownList">
+            <div style="text-align:center; padding:24px; color:var(--text-faint); font-size:13px;">No spend data recorded yet.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://veanftqpbjbdtwvccaqs.supabase.co";
+    const SUPABASE_SERVICE_ROLE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlYW5mdHFwYmpiZHR3dmNjYXFzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzQwODgwMywiZXhwIjoyMTAyOTg0ODAzfQ.m15ykc-zbdc6LhWwKwEQ0saRcgSoFtpjgm62lWHOhBw";
+
+    let dbClient = null;
+    let allUsers = [];
+    let allTxns = [];
+    let allAccruals = [];
+
+    function getDB() {
+      if(!dbClient && window.supabase) {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
+          auth: { autoRefreshToken: false, persistSession: false }
+        });
+      }
+      return dbClient;
+    }
+
+    function checkAuth() {
+      if(localStorage.getItem('ksf_admin_auth') === 'true') {
+        document.getElementById('authView').style.display = 'none';
+        loadLiveTelemetry();
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const val = document.getElementById('passInput').value;
+      if(val === 'Charisma2026!') {
+        localStorage.setItem('ksf_admin_auth', 'true');
+        document.getElementById('authView').style.display = 'none';
+        loadLiveTelemetry();
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('ksf_admin_auth');
+      document.getElementById('authView').style.display = 'flex';
+      document.getElementById('passInput').value = '';
+    }
+
+    function switchNav(nav) {
+      document.getElementById('navDash').className = 'nav-item ' + (nav === 'dashboard' ? 'active' : '');
+      document.getElementById('navUsers').className = 'nav-item ' + (nav === 'users' ? 'active' : '');
+      document.getElementById('navTxns').className = 'nav-item ' + (nav === 'txns' ? 'active' : '');
+      if(nav === 'users') switchTableTab('users');
+      if(nav === 'txns') switchTableTab('txns');
+    }
+
+    function switchTableTab(tab) {
+      document.getElementById('tableUsersWrap').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('tableTxnsWrap').style.display = tab === 'txns' ? 'block' : 'none';
+      document.getElementById('tabBtnUsers').className = 'tab-pill ' + (tab === 'users' ? 'active' : '');
+      document.getElementById('tabBtnTxns').className = 'tab-pill ' + (tab === 'txns' ? 'active' : '');
+    }
+
+    async function loadLiveTelemetry() {
+      const db = getDB();
+      if(!db) return;
+
+      document.getElementById('liveDate').innerText = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      try {
+        const [{ data: profs }, { data: settingsData }, { data: txns }, { data: accs }] = await Promise.all([
+          db.from('profiles').select('*').order('created_at', { ascending: false }),
+          db.from('settings').select('*'),
+          db.from('transactions').select('*').order('occurred_at', { ascending: false }),
+          db.from('accruals').select('*')
+        ]);
+
+        const settingsMap = (settingsData || []).reduce((acc, s) => { acc[s.user_id] = s; return acc; }, {});
+        const accrualsByUser = (accs || []).reduce((acc, a) => {
+          acc[a.user_id] = (acc[a.user_id] || 0) + Number(a.amount || 0);
+          return acc;
+        }, {});
+
+        allUsers = (profs || []).map(p => ({
+          ...p,
+          settings: settingsMap[p.id] || {},
+          totalSaved: accrualsByUser[p.id] || 0
+        }));
+
+        allTxns = txns || [];
+        allAccruals = accs || [];
+
+        renderDashboard();
+      } catch (err) {
+        console.error('Error in telemetry loading:', err);
+      }
+    }
+
+    function renderDashboard() {
+      const totalVaultVolume = allAccruals.reduce((sum, a) => sum + Number(a.amount || 0), 0);
+      const totalSpendVolume = allTxns.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+      // KPI Elements
+      document.getElementById('kpiUsers').innerText = allUsers.length;
+      document.getElementById('kpiVaults').innerText = 'K' + totalVaultVolume.toFixed(2);
+      document.getElementById('kpiAccrualsCount').innerText = allAccruals.length + ' saved round-up accruals';
+      document.getElementById('kpiSpend').innerText = 'K' + totalSpendVolume.toFixed(2);
+      document.getElementById('kpiTxnCount').innerText = allTxns.length + ' alerts processed';
+      document.getElementById('kpiAvg').innerText = 'K' + (allAccruals.length ? (totalVaultVolume / allAccruals.length).toFixed(2) : '0.00');
+
+      // Strategy Stats
+      const k5Count = allUsers.filter(u => Number(u.settings?.strategy_base) === 5 || !u.settings?.strategy_base).length;
+      const k10Count = allUsers.filter(u => Number(u.settings?.strategy_base) === 10).length;
+      const k5Pct = allUsers.length ? Math.round((k5Count / allUsers.length) * 100) : 100;
+
+      document.getElementById('statTotalUsers').innerText = allUsers.length;
+      document.getElementById('statK5Users').innerText = k5Count;
+      document.getElementById('statK10Users').innerText = k10Count;
+      document.getElementById('gaugePct').innerText = k5Pct + '%';
+
+      renderUsersTable(allUsers);
+      renderTxnsTable(allTxns);
+      renderCategoryBreakdown(allTxns);
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if(users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:36px; color:var(--text-faint);">No registered accounts found. Clean slate.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const isZonse = Number(u.settings?.strategy_base) === 10;
+        return `
+          <tr>
+            <td style="font-weight:700; color:var(--text-main);">${u.full_name || 'Member'}</td>
+            <td style="font-family:monospace; color:var(--text-muted); font-size:13px;">${u.phone || '—'}</td>
+            <td>
+              <span class="badge-status ${isZonse ? 'zonse' : 'active'}">
+                ${isZonse ? 'Zonse Zonse (K10)' : 'Panono Panono (K5)'}
+              </span>
+            </td>
+            <td style="color:var(--text-muted); font-weight:600;">K${u.settings?.safety_buffer || 50}</td>
+            <td style="font-weight:800; color:var(--tag-green-text);">+K${Number(u.totalSaved || 0).toFixed(2)}</td>
+            <td style="color:var(--text-faint); font-size:12.5px;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderTxnsTable(txns) {
+      const tbody = document.getElementById('txnsTableBody');
+      if(txns.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:36px; color:var(--text-faint);">No transactions recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = txns.map(t => `
+        <tr>
+          <td style="font-family:monospace; font-weight:700; color:var(--accent-forest);">${t.ref || 'TXN'}</td>
+          <td style="font-weight:600;">${t.category || 'Transfer'}</td>
+          <td style="font-weight:800; color:var(--text-main);">K${Number(t.amount || 0).toFixed(2)}</td>
+          <td style="color:var(--text-muted);">${t.balance_after ? 'K' + Number(t.balance_after).toFixed(2) : '—'}</td>
+          <td style="color:var(--text-faint); font-size:12.5px;">${t.occurred_at ? new Date(t.occurred_at).toLocaleString() : '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCategoryBreakdown(txns) {
+      const list = document.getElementById('categoryBreakdownList');
+      if(txns.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-faint); font-size:13px;">No spend data recorded yet.</div>';
+        return;
+      }
+
+      const catMap = {};
+      txns.forEach(t => {
+        const c = t.category || 'Transfer';
+        catMap[c] = (catMap[c] || 0) + Number(t.amount || 0);
+      });
+
+      const total = Object.values(catMap).reduce((a, b) => a + b, 0) || 1;
+      const sorted = Object.keys(catMap).sort((a, b) => catMap[b] - catMap[a]);
+
+      const colors = ['#C6FF00', '#2B7A54', '#D8AC58', '#3B82F6', '#8B5CF6'];
+
+      list.innerHTML = sorted.map((cat, i) => {
+        const amt = catMap[cat];
+        const pct = Math.round((amt / total) * 100);
+        const col = colors[i % colors.length];
+        return `
+          <div class="cat-bar-item">
+            <div class="cat-info" style="width:120px;">
+              <span class="cat-pill" style="background:${col}"></span>
+              <span>${cat}</span>
+            </div>
+            <div class="cat-track">
+              <div class="cat-fill" style="width:${pct}%; background:${col}"></div>
+            </div>
+            <div class="cat-amount">K${amt.toFixed(2)} <span style="font-size:11px; color:var(--text-muted); font-weight:500;">(${pct}%)</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterTables() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase();
+      const filteredUsers = allUsers.filter(u => 
+        (u.full_name || '').toLowerCase().includes(q) || 
+        (u.phone || '').toLowerCase().includes(q)
+      );
+      const filteredTxns = allTxns.filter(t => 
+        (t.ref || '').toLowerCase().includes(q) || 
+        (t.category || '').toLowerCase().includes(q)
+      );
+      renderUsersTable(filteredUsers);
+      renderTxnsTable(filteredTxns);
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
