@@ -192,8 +192,11 @@ input:focus{border-color:#D7EA4A;outline:none}
 <sc-for list="{{ savers }}" as="u" hint-placeholder-count="6">
 <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,.62fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.05fr);gap:12px;align-items:center;padding:13px 20px;border-top:1px solid #F0EEE5;font-size:13px;white-space:nowrap">
 <div style="min-width:0">
-<div style="font-weight:600;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
-<div style="font-size:11.5px;color:#8A8B7F;margin-top:2px">{{ u.joined }}</div>
+<div style="display:flex;align-items:center;gap:6px">
+<span style="font-weight:700;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1C1E16">{{ u.name }}</span>
+<span style="padding:1px 6px;border-radius:6px;background:rgba(28,30,22,0.06);font-family:monospace;font-size:10.5px;font-weight:700;color:#6E7064">{{ u.idCode }}</span>
+</div>
+<div style="font-size:11.5px;color:#8A8B7F;margin-top:2px">{{ u.phone }} · {{ u.joined }}</div>
 </div>
 <div style="min-width:0"><div style="display:inline-block;padding:3px 8px;border-radius:99px;background:{{ u.stratBg }};font-size:11.5px;font-weight:600;color:{{ u.stratInk }};max-width:100%;overflow:hidden;text-overflow:ellipsis">{{ u.strategy }}</div></div>
 <div style="color:#6E7064;min-width:0">K{{ u.buffer }}</div>
@@ -279,7 +282,12 @@ input:focus{border-color:#D7EA4A;outline:none}
 </div>
 <sc-for list="{{ savers }}" as="u" hint-placeholder-count="6">
 <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;padding:14px 20px;border-top:1px solid #F0EEE5;font-size:13.5px">
-<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
+<div style="min-width:0">
+<div style="display:flex;align-items:center;gap:6px">
+<span style="font-weight:700;color:#1C1E16">{{ u.name }}</span>
+<span style="padding:1px 6px;border-radius:6px;background:rgba(28,30,22,0.06);font-family:monospace;font-size:10.5px;font-weight:700;color:#6E7064">{{ u.idCode }}</span>
+</div>
+</div>
 <div style="font-family:monospace;color:#6E7064;font-size:13px">{{ u.phone }}</div>
 <div><span style="display:inline-block;padding:3px 8px;border-radius:99px;background:{{ u.stratBg }};font-size:11.5px;font-weight:700;color:{{ u.stratInk }}">{{ u.strategy }}</span></div>
 <div style="color:#6E7064;font-weight:600">K{{ u.buffer }}</div>
@@ -544,13 +552,15 @@ class Component extends DCLogic {
     ];
 
     const saversOut = s.users.length === 0 ? [{
-      name: "No savers yet", joined: "Fresh baseline", phone: "—", strategy: "Panono K5",
+      name: "No savers yet", idCode: "SV-0000", joined: "Fresh baseline", phone: "—", strategy: "Panono K5",
       stratBg: "rgba(143,163,43,.16)", stratInk: "#5E6E14", buffer: 50, saved: "0.00",
       last: "—", health: 100, healthPct: 100, healthFill: DEEP
     }] : s.users.map((u, i) => {
       const isZonse = Number(u.settings?.strategy_base) === 10;
+      const uniqueCode = "SV-" + (u.id ? u.id.slice(0,4).toUpperCase() : String(i + 1).padStart(4, "0"));
       return {
-        name: s.reveal ? (u.full_name || "Member") : ("SV-" + String(i + 1).padStart(4, "0")),
+        name: u.full_name || ("Member #" + (i + 1)),
+        idCode: uniqueCode,
         phone: s.reveal ? (u.phone || "—") : ("+260 ••• •••" + (u.phone ? u.phone.slice(-3) : "")),
         joined: u.created_at ? new Date(u.created_at).toLocaleDateString() : "Today",
         strategy: isZonse ? "Zonse K10" : "Panono K5",
