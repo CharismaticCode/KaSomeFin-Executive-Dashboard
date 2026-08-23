@@ -17,6 +17,7 @@ a{color:#5E6E14}
 a:hover{color:#3F4A0D}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(28,30,22,.18);border-radius:9px}
+input:focus{border-color:#D7EA4A;outline:none}
 </style>
 </helmet>
 
@@ -37,7 +38,7 @@ a:hover{color:#3F4A0D}
 </div>
 
 <div style="display:flex;flex-direction:column;gap:2px">
-<sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
 <div onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;cursor:pointer;background:{{ n.bg }};color:{{ n.color }};transition:background .15s ease">
 <div style="width:6px;height:6px;border-radius:99px;background:{{ n.dot }};flex:none"></div>
 <div style="flex:1;font-size:13px;font-weight:{{ n.weight }};letter-spacing:-.1px">{{ n.label }}</div>
@@ -60,9 +61,10 @@ a:hover{color:#3F4A0D}
 </div>
 </div>
 
-<!-- MAIN OPERATIONAL VIEW -->
+<!-- MAIN CONTENT AREA -->
 <div style="flex:1;min-width:0;padding:26px 30px 40px">
 
+<!-- TOP HEADER -->
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
 <div>
 <div style="font-size:26px;font-weight:700;letter-spacing:-.9px">{{ pageTitle }}</div>
@@ -80,6 +82,11 @@ a:hover{color:#3F4A0D}
 </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- SECTION 1: DASHBOARD (OVERVIEW) -->
+<!-- ========================================================================= -->
+<sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+<div>
 <div style="margin-top:18px;display:flex;gap:11px">
 <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="3">
 <div style="flex:1;display:flex;align-items:flex-start;gap:11px;padding:14px 15px;border-radius:14px;background:{{ a.bg }};border:1px solid {{ a.line }}">
@@ -88,7 +95,7 @@ a:hover{color:#3F4A0D}
 <div style="font-size:13.5px;font-weight:700;letter-spacing:-.2px">{{ a.title }}</div>
 <div style="margin-top:3px;font-size:12px;line-height:1.5;color:#6E7064;text-wrap:pretty">{{ a.body }}</div>
 </div>
-<div style="font-size:12.5px;font-weight:700;color:{{ a.tone }};white-space:nowrap;flex:none;cursor:pointer">{{ a.action }} ›</div>
+<div onClick="{{ a.onClick }}" style="font-size:12.5px;font-weight:700;color:{{ a.tone }};white-space:nowrap;flex:none;cursor:pointer">{{ a.action }} ›</div>
 </div>
 </sc-for>
 </div>
@@ -114,12 +121,10 @@ a:hover{color:#3F4A0D}
 
 <!-- 2-COLUMN TELEMETRY GRID -->
 <div style="margin-top:14px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:12px">
-
-<!-- LEFT: VOLUME & ACTIVITY GROWTH -->
 <div style="padding:19px 20px;border-radius:16px;background:#fff;border:1px solid #DFDDD2;min-width:0">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
 <div>
-<div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Transacted & Saved Volume</div>
+<div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Savings & Transacted Volume</div>
 <div style="margin-top:3px;font-size:12px;color:#8A8B7F">Actual spend vs savings rate · {{ rangeLabel }}</div>
 </div>
 <div style="display:flex;gap:16px;flex:none">
@@ -144,7 +149,6 @@ a:hover{color:#3F4A0D}
 </div>
 </div>
 
-<!-- RIGHT: SWEEP PIPELINE -->
 <div style="padding:19px 20px;border-radius:16px;background:#fff;border:1px solid #DFDDD2;display:flex;flex-direction:column;min-width:0">
 <div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Sweep pipeline</div>
 <div style="margin-top:3px;font-size:12px;color:#8A8B7F">Promise → money → trust account</div>
@@ -162,102 +166,132 @@ a:hover{color:#3F4A0D}
 </div>
 </sc-for>
 </div>
-<div style="margin-top:16px;padding:12px 13px;border-radius:12px;background:#F4F3ED;border:1px solid #E4E2D8;font-size:11.5px;line-height:1.5;color:#6E7064;text-wrap:pretty">Reconciliation gap is monitored continuously. Every ngwee matches across live customer profiles.</div>
 </div>
-
 </div>
+</div>
+</sc-if>
 
-<!-- SAVERS & TELEMETRY ROW -->
-<div style="margin-top:14px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:12px">
-
-<!-- LEFT: SAVERS & CENTRAL LEDGER LIST -->
-<div style="border-radius:16px;background:#fff;border:1px solid #DFDDD2;overflow:hidden;min-width:0">
-<div style="padding:17px 20px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #E9E7DD">
+<!-- ========================================================================= -->
+<!-- SECTION 2: SAVERS (ALL REGISTERED USERS) -->
+<!-- ========================================================================= -->
+<sc-if value="{{ isSavers }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:18px;border-radius:16px;background:#fff;border:1px solid #DFDDD2;overflow:hidden">
+<div style="padding:17px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E9E7DD">
 <div>
-<div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Savers & Ledger</div>
-<div style="margin-top:3px;font-size:12px;color:#8A8B7F">{{ saverCount }} registered accounts</div>
+<div style="font-size:16px;font-weight:700">All Registered Savers ({{ saverCount }})</div>
+<div style="font-size:12px;color:#8A8B7F;margin-top:2px">Live profiles from Supabase Auth & public.profiles</div>
 </div>
-<div style="display:flex;align-items:center;gap:8px;flex:none">
+<div style="display:flex;gap:8px">
 <div onClick="{{ toggleReveal }}" style="padding:7px 12px;border-radius:9px;background:{{ revealBg }};color:{{ revealColor }};border:1px solid #DFDDD2;font-size:12px;font-weight:600;cursor:pointer">{{ revealLabel }}</div>
 <div onClick="{{ exportCsv }}" style="padding:7px 12px;border-radius:9px;background:#F4F3ED;border:1px solid #DFDDD2;font-size:12px;color:#8A8B7F;cursor:pointer">Export CSV</div>
 </div>
 </div>
-<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,.62fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.05fr);gap:12px;padding:11px 20px;background:#F7F6F1;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8A8B7F;font-weight:600;white-space:nowrap">
-<div style="min-width:0;overflow:hidden;text-overflow:ellipsis">Saver</div><div style="min-width:0;overflow:hidden;text-overflow:ellipsis">Strategy</div><div style="min-width:0;overflow:hidden;text-overflow:ellipsis">Buffer</div><div style="min-width:0;overflow:hidden;text-overflow:ellipsis">Saved</div><div style="min-width:0;overflow:hidden;text-overflow:ellipsis">Last paste</div><div style="min-width:0;text-align:right">Health</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr);gap:12px;padding:11px 20px;background:#F7F6F1;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#8A8B7F;font-weight:700">
+<div>Saver</div><div>Mobile / ID</div><div>Strategy</div><div>Buffer</div><div>Total Vault</div><div>Joined Date</div>
 </div>
 <sc-for list="{{ savers }}" as="u" hint-placeholder-count="6">
-<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,.62fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.05fr);gap:12px;align-items:center;padding:13px 20px;border-top:1px solid #F0EEE5;font-size:13px;white-space:nowrap">
-<div style="min-width:0">
-<div style="font-weight:600;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
-<div style="font-size:11.5px;color:#8A8B7F;margin-top:2px">{{ u.joined }}</div>
-</div>
-<div style="min-width:0"><div style="display:inline-block;padding:3px 8px;border-radius:99px;background:{{ u.stratBg }};font-size:11.5px;font-weight:600;color:{{ u.stratInk }};max-width:100%;overflow:hidden;text-overflow:ellipsis">{{ u.strategy }}</div></div>
-<div style="color:#6E7064;min-width:0">K{{ u.buffer }}</div>
-<div style="font-weight:700;letter-spacing:-.2px;min-width:0">K{{ u.saved }}</div>
-<div style="color:#6E7064;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ u.last }}</div>
-<div style="display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:0">
-<div style="flex:1;min-width:22px;max-width:44px;height:6px;border-radius:99px;background:#EDEBE3;overflow:hidden"><div style="width:{{ u.healthPct }}%;height:100%;background:{{ u.healthFill }}"></div></div>
-<div style="font-size:11.5px;font-weight:600;color:{{ u.healthFill }};flex:none;text-align:right">{{ u.health }}</div>
-</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;padding:14px 20px;border-top:1px solid #F0EEE5;font-size:13.5px">
+<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</div>
+<div style="font-family:monospace;color:#6E7064;font-size:13px">{{ u.phone }}</div>
+<div><span style="display:inline-block;padding:3px 8px;border-radius:99px;background:{{ u.stratBg }};font-size:11.5px;font-weight:700;color:{{ u.stratInk }}">{{ u.strategy }}</span></div>
+<div style="color:#6E7064;font-weight:600">K{{ u.buffer }}</div>
+<div style="font-weight:800;color:#2B7A54">+K{{ u.saved }}</div>
+<div style="color:#8A8B7F;font-size:12px">{{ u.joined }}</div>
 </div>
 </sc-for>
 </div>
+</sc-if>
 
-<!-- RIGHT: PARSE QUALITY & CATEGORY BREAKDOWN -->
-<div style="display:flex;flex-direction:column;gap:12px">
-<div style="padding:19px 20px;border-radius:16px;background:#fff;border:1px solid #DFDDD2">
-<div style="display:flex;align-items:baseline;justify-content:space-between">
-<div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Parse quality</div>
-<div style="font-size:19px;font-weight:700;letter-spacing:-.5px">{{ parseRate }}</div>
+<!-- ========================================================================= -->
+<!-- SECTION 3: CENTRAL LEDGER (ALL TRANSACTIONS) -->
+<!-- ========================================================================= -->
+<sc-if value="{{ isLedger }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:18px;border-radius:16px;background:#fff;border:1px solid #DFDDD2;overflow:hidden">
+<div style="padding:17px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E9E7DD">
+<div>
+<div style="font-size:16px;font-weight:700">Central Ledger & SMS Transaction Stream ({{ txnsCount }})</div>
+<div style="font-size:12px;color:#8A8B7F;margin-top:2px">Parsed transaction feeds and calculated round-ups</div>
 </div>
-<div style="margin-top:3px;font-size:12px;color:#8A8B7F">{{ parseTotal }} messages processed · {{ rangeLabel }}</div>
-<div style="margin-top:15px;display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px">
-<sc-for list="{{ parseBar }}" as="p" hint-placeholder-count="3">
-<div style="width:{{ p.pct }}%;background:{{ p.fill }}"></div>
+<div style="display:flex;gap:8px">
+<div onClick="{{ exportTxnsCsv }}" style="padding:7px 12px;border-radius:9px;background:#F4F3ED;border:1px solid #DFDDD2;font-size:12px;color:#8A8B7F;cursor:pointer">Export Ledger CSV</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr);gap:12px;padding:11px 20px;background:#F7F6F1;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#8A8B7F;font-weight:700">
+<div>Ref ID</div><div>Category</div><div>Transacted (Spent)</div><div>Round-Up Saved</div><div>Balance After</div><div>Occurred At</div>
+</div>
+<sc-for list="{{ ledgerRows }}" as="t" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr);gap:12px;align-items:center;padding:14px 20px;border-top:1px solid #F0EEE5;font-size:13.5px">
+<div style="font-family:monospace;font-weight:700;color:#14160F">{{ t.ref }}</div>
+<div><span style="display:inline-block;padding:2px 8px;border-radius:6px;background:#F4F3ED;font-size:12px;font-weight:600">{{ t.category }}</span></div>
+<div style="font-weight:700">K{{ t.amount }}</div>
+<div style="font-weight:800;color:#2B7A54">+K{{ t.roundup }}</div>
+<div style="color:#6E7064">{{ t.balanceAfter }}</div>
+<div style="color:#8A8B7F;font-size:12px">{{ t.time }}</div>
+</div>
 </sc-for>
 </div>
-<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
-<sc-for list="{{ parseRows }}" as="p" hint-placeholder-count="5">
-<div style="display:flex;align-items:center;gap:10px">
-<div style="width:8px;height:8px;border-radius:99px;background:{{ p.fill }};flex:none"></div>
-<div style="flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.label }}</div>
-<div style="font-size:12.5px;font-weight:700">{{ p.count }}</div>
-<div style="font-size:11.5px;color:#8A8B7F;width:34px;text-align:right">{{ p.pct }}%</div>
-</div>
-</sc-for>
-</div>
-<div style="margin-top:14px;padding-top:13px;border-top:1px solid #F0EEE5;font-size:11.5px;line-height:1.55;color:#6E7064;text-wrap:pretty">{{ parseNote }}</div>
-</div>
+</sc-if>
 
-<div style="padding:19px 20px;border-radius:16px;background:#fff;border:1px solid #DFDDD2">
-<div style="font-size:15px;font-weight:700;letter-spacing:-.3px">Weekly activity breakdown</div>
-<div style="margin-top:3px;font-size:12px;color:#8A8B7F">Category share of transactions</div>
-<div style="margin-top:15px;display:flex;flex-direction:column;gap:6px">
-<sc-for list="{{ cohorts }}" as="c" hint-placeholder-count="5">
-<div style="display:flex;align-items:center;gap:7px">
-<div style="width:64px;flex:none;font-size:11px;color:#8A8B7F">{{ c.label }}</div>
-<sc-for list="{{ c.cells }}" as="cell" hint-placeholder-count="5">
-<div style="flex:1;height:26px;border-radius:5px;background:{{ cell.fill }};display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;color:{{ cell.ink }}">{{ cell.v }}</div>
-</sc-for>
+<!-- ========================================================================= -->
+<!-- SECTION 4: SWEEPS -->
+<!-- ========================================================================= -->
+<sc-if value="{{ isSweeps }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:18px;display:flex;flex-direction:column;gap:14px">
+<div style="padding:22px 24px;border-radius:16px;background:#fff;border:1px solid #DFDDD2">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div>
+<div style="font-size:17px;font-weight:700">Automated Weekly Collections Batch</div>
+<div style="font-size:12.5px;color:#8A8B7F;margin-top:3px">Batch Collection API schedule for all active round-up accounts</div>
 </div>
-</sc-for>
-<div style="display:flex;align-items:center;gap:7px;margin-top:2px">
-<div style="width:64px;flex:none"></div>
-<sc-for list="{{ cohortHead }}" as="h" hint-placeholder-count="5">
-<div style="flex:1;text-align:center;font-size:10px;color:#8A8B7F">{{ h }}</div>
-</sc-for>
+<div style="padding:8px 14px;border-radius:99px;background:#E8F5EE;color:#206E49;font-weight:700;font-size:12.5px">Active · Next Sunday 23:00 CAT</div>
+</div>
+<div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+<div style="padding:16px;border-radius:12px;background:#F7F6F1">
+<div style="font-size:11px;text-transform:uppercase;color:#8A8B7F;font-weight:600">Pending Collection</div>
+<div style="font-size:24px;font-weight:800;margin-top:6px;color:#14160F">K{{ pendingTotal }}</div>
+</div>
+<div style="padding:16px;border-radius:12px;background:#F7F6F1">
+<div style="font-size:11px;text-transform:uppercase;color:#8A8B7F;font-weight:600">Participating Savers</div>
+<div style="font-size:24px;font-weight:800;margin-top:6px;color:#14160F">{{ saverCount }}</div>
+</div>
+<div style="padding:16px;border-radius:12px;background:#F7F6F1">
+<div style="font-size:11px;text-transform:uppercase;color:#8A8B7F;font-weight:600">Trust Pool Ratio</div>
+<div style="font-size:24px;font-weight:800;margin-top:6px;color:#2B7A54">100% Segregated</div>
 </div>
 </div>
 </div>
 </div>
+</sc-if>
 
+<!-- ========================================================================= -->
+<!-- SECTION 5: SETTINGS -->
+<!-- ========================================================================= -->
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:18px;max-width:700px;border-radius:16px;background:#fff;border:1px solid #DFDDD2;padding:24px">
+<div style="font-size:17px;font-weight:700">Operations & Environment Settings</div>
+<div style="font-size:12.5px;color:#8A8B7F;margin-top:3px">Master configuration for telemetry and DB access</div>
+<div style="margin-top:22px;display:flex;flex-direction:column;gap:16px">
+<div>
+<div style="font-size:12px;font-weight:700;color:#6E7064;text-transform:uppercase">Supabase Project Endpoint</div>
+<div style="margin-top:6px;padding:12px 14px;border-radius:10px;background:#F7F6F1;font-family:monospace;font-size:13px">https://veanftqpbjbdtwvccaqs.supabase.co</div>
 </div>
+<div>
+<div style="font-size:12px;font-weight:700;color:#6E7064;text-transform:uppercase">Operational Access Role</div>
+<div style="margin-top:6px;padding:12px 14px;border-radius:10px;background:#F7F6F1;font-family:monospace;font-size:13px">Master Service Role (Telemetry & Custody Sync)</div>
+</div>
+<div>
+<div style="font-size:12px;font-weight:700;color:#6E7064;text-transform:uppercase">Automated Sweep Window</div>
+<div style="margin-top:6px;padding:12px 14px;border-radius:10px;background:#F7F6F1;font-size:13px">Every Sunday @ 23:00 Central African Time (CAT)</div>
+</div>
+</div>
+</div>
+</sc-if>
 
 </div>
 </div>
 </sc-if>
 
-<!-- AUTH MODAL -->
+<!-- AUTH OVERLAY -->
 <sc-if value="{{ notAuthed }}" hint-placeholder-val="{{ false }}">
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#273D32 0%,#111C16 100%);padding:20px;color:#F1F4F0">
 <div style="background:#17261F;border:1px solid rgba(255,255,255,0.08);border-radius:28px;padding:44px;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.6)">
@@ -338,15 +372,25 @@ class Component extends DCLogic {
         return acc;
       }, {});
 
+      const accrualsByTxn = (accs || []).reduce((acc, a) => {
+        acc[a.transaction_id] = a.amount;
+        return acc;
+      }, {});
+
       const combinedUsers = (profs || []).map(p => ({
         ...p,
         settings: settingsMap[p.id] || {},
         totalSaved: accrualsByUser[p.id] || 0
       }));
 
+      const combinedTxns = (txns || []).map(t => ({
+        ...t,
+        roundup: accrualsByTxn[t.id] || 0
+      }));
+
       this.setState({
         users: combinedUsers,
-        txns: txns || [],
+        txns: combinedTxns,
         accruals: accs || [],
         loading: false
       });
@@ -366,7 +410,7 @@ class Component extends DCLogic {
 
     const nav = ["Dashboard", "Savers", "Ledger", "Sweeps", "Settings"].map(label=>({
       label,
-      badge: label === "Ledger" && s.txns.length ? String(s.txns.length) : "",
+      badge: label === "Ledger" && s.txns.length ? String(s.txns.length) : (label === "Savers" && s.users.length ? String(s.users.length) : ""),
       bg: s.nav === label ? "rgba(215,234,74,.14)" : "transparent",
       color: s.nav === label ? "#EFF3D9" : "rgba(233,231,220,.62)",
       dot: s.nav === label ? LIME : "rgba(233,231,220,.22)",
@@ -382,9 +426,9 @@ class Component extends DCLogic {
     }));
 
     const alerts = [
-      { title: s.txns.length ? s.txns.length + " transactions live" : "Clean state ready", body: s.txns.length ? "Live transaction feed synced to Supabase database." : "Zero transactions or pending errors.", action: "Telemetry", tone: DEEP, bg: "#F3F7EF", line: "#DCE7D3" },
-      { title: "Sweep pipeline active", body: "Sunday 23:00 batch aggregation enabled across all vaults.", action: "Schedule", tone: OLIVE, bg: "#FCF8EF", line: "#EDE2CB" },
-      { title: "Reconciliation clean", body: "Segregated trust ledger matches all customer accruals to the ngwee.", action: "Statement", tone: DEEP, bg: "#F3F7EF", line: "#DCE7D3" }
+      { title: s.txns.length ? s.txns.length + " transactions live" : "Clean state ready", body: s.txns.length ? "Live transaction feed synced to Supabase database." : "Zero transactions or pending errors.", action: "View Ledger", tone: DEEP, bg: "#F3F7EF", line: "#DCE7D3", onClick:()=>this.setState({nav:"Ledger"}) },
+      { title: "Sweep pipeline active", body: "Sunday 23:00 batch aggregation enabled across all vaults.", action: "View Sweeps", tone: OLIVE, bg: "#FCF8EF", line: "#EDE2CB", onClick:()=>this.setState({nav:"Sweeps"}) },
+      { title: "Savers directory", body: saversCount + " registered customer profiles.", action: "View Savers", tone: DEEP, bg: "#F3F7EF", line: "#DCE7D3", onClick:()=>this.setState({nav:"Savers"}) }
     ];
 
     const kpis = [
@@ -412,13 +456,14 @@ class Component extends DCLogic {
     ];
 
     const saversOut = s.users.length === 0 ? [{
-      name: "No savers yet", joined: "Fresh baseline", strategy: "Panono K5",
+      name: "No savers yet", joined: "Fresh baseline", phone: "—", strategy: "Panono K5",
       stratBg: "rgba(143,163,43,.16)", stratInk: "#5E6E14", buffer: 50, saved: "0.00",
       last: "—", health: 100, healthPct: 100, healthFill: DEEP
     }] : s.users.map((u, i) => {
       const isZonse = Number(u.settings?.strategy_base) === 10;
       return {
         name: s.reveal ? (u.full_name || "Member") : ("SV-" + String(i + 1).padStart(4, "0")),
+        phone: s.reveal ? (u.phone || "—") : ("+260 ••• •••" + (u.phone ? u.phone.slice(-3) : "")),
         joined: u.created_at ? new Date(u.created_at).toLocaleDateString() : "Today",
         strategy: isZonse ? "Zonse K10" : "Panono K5",
         stratBg: isZonse ? "rgba(78,122,47,.16)" : "rgba(143,163,43,.16)",
@@ -432,31 +477,16 @@ class Component extends DCLogic {
       };
     });
 
-    const catMap = {};
-    s.txns.forEach(t => {
-      const c = t.category || "Transfer";
-      catMap[c] = (catMap[c] || 0) + 1;
-    });
-    const totalCatCount = s.txns.length || 1;
-
-    const parseRows = [
-      { label: "Groceries", count: catMap["Groceries"] || 0, pct: Math.round(((catMap["Groceries"] || 0)/totalCatCount)*100), fill: LIME },
-      { label: "Transport", count: catMap["Transport"] || 0, pct: Math.round(((catMap["Transport"] || 0)/totalCatCount)*100), fill: OLIVE },
-      { label: "Bills & Utilities", count: catMap["Bills"] || 0, pct: Math.round(((catMap["Bills"] || 0)/totalCatCount)*100), fill: DEEP },
-      { label: "Airtime & Bundles", count: catMap["Airtime"] || 0, pct: Math.round(((catMap["Airtime"] || 0)/totalCatCount)*100), fill: AMBER },
-      { label: "Food & Drinks", count: catMap["Food"] || 0, pct: Math.round(((catMap["Food"] || 0)/totalCatCount)*100), fill: "rgba(28,30,22,.2)" }
-    ];
-
-    const parseBar = [
-      { pct: 85, fill: LIME },
-      { pct: 12, fill: OLIVE },
-      { pct: 3, fill: RED }
-    ];
-
-    const COH = ["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5"];
-    const cohorts = [
-      { label: "Aug Cohort", cells: [{v:"100%", fill:"rgba(143,163,43,0.6)", ink:"#2E3A08"}, {v:"94%", fill:"rgba(143,163,43,0.5)", ink:"#2E3A08"}, {v:"88%", fill:"rgba(143,163,43,0.4)", ink:"#4A5412"}, {v:"82%", fill:"rgba(143,163,43,0.3)", ink:"#4A5412"}, {v:"79%", fill:"rgba(143,163,43,0.2)", ink:"#4A5412"}] }
-    ];
+    const ledgerRows = s.txns.length === 0 ? [{
+      ref: "No transactions", category: "—", amount: "0.00", roundup: "0.00", balanceAfter: "—", time: "Fresh state"
+    }] : s.txns.map(t => ({
+      ref: t.ref || "TXN",
+      category: t.category || "Transfer",
+      amount: this.money(t.amount),
+      roundup: this.money(t.roundup),
+      balanceAfter: t.balance_after ? "K" + this.money(t.balance_after) : "—",
+      time: t.occurred_at ? new Date(t.occurred_at).toLocaleString() : "—"
+    }));
 
     return {
       authed: s.authed, notAuthed: !s.authed,
@@ -478,8 +508,15 @@ class Component extends DCLogic {
       },
       loadRemote: ()=>this.loadRemote(),
       nav, ranges, alerts, kpis, growth, pipeline,
-      savers: saversOut, parseRows, parseBar, cohorts, cohortHead: COH,
-      pageTitle: s.nav === "Dashboard" ? "Operations" : s.nav,
+      isDashboard: s.nav === "Dashboard",
+      isSavers: s.nav === "Savers",
+      isLedger: s.nav === "Ledger",
+      isSweeps: s.nav === "Sweeps",
+      isSettings: s.nav === "Settings",
+      savers: saversOut,
+      ledgerRows,
+      txnsCount: s.txns.length,
+      pageTitle: s.nav === "Dashboard" ? "Operations Overview" : s.nav,
       pageSub: "Live Central Ledger & Telemetry · All figures in ZMW (K)",
       rangeLabel: "last " + s.range,
       sweepIn: "Sunday 23:00",
@@ -488,10 +525,7 @@ class Component extends DCLogic {
       totalSpendFmt: this.money(totalTransactedSpend),
       perSaver: this.money(saversCount ? totalVaultSaved / saversCount : 0),
       saverCount: saversCount,
-      parseRate: s.txns.length ? "100%" : "—",
-      parseTotal: s.txns.length,
-      parseNote: "Every transaction is parsed client-side and recorded to Supabase database.",
-      revealLabel: s.reveal ? "Hide names" : "Reveal names",
+      revealLabel: s.reveal ? "Hide identities" : "Reveal identities",
       revealBg: s.reveal ? "rgba(168,67,46,.1)" : "#F4F3ED",
       revealColor: s.reveal ? RED : "#6E7064",
       toggleReveal: ()=>this.setState({reveal:!s.reveal}),
@@ -502,6 +536,15 @@ class Component extends DCLogic {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "kasome-savers.csv";
+        a.click();
+      },
+      exportTxnsCsv: ()=>{
+        const csvRows = ["Ref,Category,Amount,RoundUp,BalanceAfter,OccurredAt"];
+        s.txns.forEach(t=>csvRows.push([t.ref||"TXN", t.category||"Transfer", t.amount||0, t.roundup||0, t.balance_after||"", t.occurred_at||""].join(",")));
+        const blob = new Blob([csvRows.join("\n")], {type:"text/csv"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "kasome-ledger.csv";
         a.click();
       }
     };
