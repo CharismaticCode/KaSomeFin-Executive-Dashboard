@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KaSome.Fin — Operations & Central Ledger</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23D7EA4A%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 text-anchor=%22middle%22 font-weight=%22bold%22 fill=%22%2314160F%22>K</text></svg>">
-<script src="./support.js"></script>
+<script src="/support.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
@@ -330,11 +330,11 @@ input:focus{border-color:#D7EA4A;outline:none}
 <div style="font-size:12px;color:#8A8B7F;margin-top:2px">Spend volume: <b>K{{ filteredSpendTotal }}</b> · Round-ups saved: <b style="color:#2B7A54">+K{{ filteredSavedTotal }}</b></div>
 </div>
 </div>
-<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:12px;padding:11px 20px;background:#F7F6F1;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8A8B7F;font-weight:700">
-<div>Saver</div><div>Ref ID</div><div>Category</div><div>Transacted (Spent)</div><div>Round-Up Saved</div><div>Balance After</div><div>Occurred At</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:14px;padding:11px 20px;background:#F7F6F1;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8A8B7F;font-weight:700">
+<div>Saver</div><div>Ref ID</div><div>Category</div><div>Transacted (Spent)</div><div>Round-Up Saved</div><div>Occurred At</div>
 </div>
 <sc-for list="{{ ledgerRows }}" as="t" hint-placeholder-count="8">
-<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:12px;align-items:center;padding:13px 20px;border-top:1px solid #F0EEE5;font-size:13px">
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:14px;align-items:center;padding:13px 20px;border-top:1px solid #F0EEE5;font-size:13px">
 <div style="min-width:0">
 <div style="display:flex;align-items:center;gap:6px">
 <span style="font-weight:700;color:#1C1E16;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.userName }}</span>
@@ -345,7 +345,6 @@ input:focus{border-color:#D7EA4A;outline:none}
 <div><span style="display:inline-block;padding:2px 8px;border-radius:6px;background:#F4F3ED;font-size:11.5px;font-weight:600">{{ t.category }}</span></div>
 <div style="font-weight:700">K{{ t.amount }}</div>
 <div style="font-weight:800;color:#2B7A54">+K{{ t.roundup }}</div>
-<div style="color:#6E7064">{{ t.balanceAfter }}</div>
 <div style="color:#8A8B7F;font-size:11.5px">{{ t.time }}</div>
 </div>
 </sc-for>
@@ -751,12 +750,12 @@ class Component extends DCLogic {
         a.click();
       },
       exportTxnsCsv: ()=>{
-        const csvRows = ["Saver,Badge,Ref,Category,TransactedSpend,RoundUpSaved,BalanceAfter,OccurredAt"];
+        const csvRows = ["Saver,Badge,Ref,Category,TransactedSpend,RoundUpSaved,OccurredAt"];
         activeFilteredTxns.forEach(t=>{
           const u = userMap[t.user_id] || { name: "Member", badge: "SV-0000" };
           csvRows.push([
             `"${u.name}"`, u.badge, t.ref||"TXN", t.category||"Transfer",
-            t.amount||0, t.roundup||0, t.balance_after||"", t.occurred_at||""
+            t.amount||0, t.roundup||0, t.occurred_at||""
           ].join(","));
         });
         const blob = new Blob([csvRows.join("\n")], {type:"text/csv"});
