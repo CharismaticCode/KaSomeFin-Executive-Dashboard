@@ -132,12 +132,12 @@ export default function App() {
         {!m ? (
           <div className="grid g4">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton" />)}</div>
         ) : page === "overview" ? <Overview m={m} range={range} openSaver={openSaver} />
-          : page === "savers" ? <Savers m={m} reveal={reveal} openSaver={openSaver} />
+          : page === "savers" ? <Savers m={m} reveal={reveal} openSaver={openSaver} refresh={refresh} />
           : page === "ledger" ? <Ledger m={m} range={range} saver={ledgerSaver} setSaver={setLedgerSaver} openSaver={openSaver} />
           : <Money m={m} openSaver={openSaver} />}
       </main>
 
-      {m && drawer ? <SaverDrawer m={m} id={drawer} reveal={reveal} onClose={() => setDrawer(null)} openLedger={openLedger} /> : null}
+      {m && drawer ? <SaverDrawer m={m} id={drawer} reveal={reveal} onClose={() => setDrawer(null)} openLedger={openLedger} refresh={refresh} /> : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { money, int, dateLabel, dateTime, ago, maskPhone, dayLong, dayLabel } from "../lib/format.js";
 import { Card, Pill, Bars, Empty } from "../ui.jsx";
+import { ResetRequests, ResetButton } from "./Resets.jsx";
 
 const FILTERS = [
   ["all", "All"], ["active", "Active"], ["slipping", "Slipping"], ["dormant", "Dormant"], ["never", "Not started"],
@@ -10,7 +11,7 @@ const COLS = [
   ["roundups", "Round-ups", "r"], ["days30", "Days active (30d)", "r"], ["last", "Last paste", "r"], ["status", "Status"],
 ];
 
-export default function Savers({ m, reveal, openSaver }) {
+export default function Savers({ m, reveal, openSaver, refresh }) {
   const [q, setQ] = useState("");
   const [f, setF] = useState("all");
   const [sort, setSort] = useState(["balance", -1]);
@@ -42,7 +43,8 @@ export default function Savers({ m, reveal, openSaver }) {
           ))}
         </div>
       </div>
-      <Card flush>
+      <ResetRequests m={m} onIssued={refresh} openSaver={openSaver} />
+      <Card flush className="mt">
         <div className="tbl-wrap">
           <table className="tbl">
             <thead>
@@ -84,7 +86,7 @@ export default function Savers({ m, reveal, openSaver }) {
   );
 }
 
-export function SaverDrawer({ m, id, reveal, onClose, openLedger }) {
+export function SaverDrawer({ m, id, reveal, onClose, openLedger, refresh }) {
   const s = m.saverById.get(id);
   if (!s) return null;
   const rows = m.txns.filter((t) => t.userId === id);
@@ -143,6 +145,13 @@ export function SaverDrawer({ m, id, reveal, onClose, openLedger }) {
             </tbody></table></div>
           </div>
         ) : null}
+
+        <div className="card" style={{ marginTop: 12 }}>
+          <div className="card-h" style={{ marginBottom: 10 }}>
+            <div><h2>Password</h2><p>{(() => { const r = (m.resets || []).find((x) => x.userId === id); return r ? `Last reset request ${r.status === "requested" ? "waiting for a code" : r.status}` : "No reset requests"; })()}</p></div>
+          </div>
+          <ResetButton saver={s} requestId={((m.resets || []).find((x) => x.userId === id && x.status === "requested") || {}).id} onIssued={refresh} />
+        </div>
 
         <div className="card flush" style={{ marginTop: 12 }}>
           <div className="card-h">
