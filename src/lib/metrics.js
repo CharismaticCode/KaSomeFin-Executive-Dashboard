@@ -134,6 +134,19 @@ function windowStats(m, from, to) {
   };
 }
 
+/** Transaction volume for a window, derived from the same window stats. */
+export function volume(stats) {
+  return {
+    payments: stats.payments,
+    value: stats.spend,
+    avgPayment: stats.payments ? r2(stats.spend / stats.payments) : 0,
+    perSaver: stats.active ? r2(stats.spend / stats.active) : 0,
+    paymentsPerSaver: stats.active ? Math.round((stats.payments / stats.active) * 10) / 10 : 0,
+    // Share of payment value that became savings.
+    saveRate: stats.spend ? Math.round((stats.saved / stats.spend) * 1000) / 10 : 0,
+  };
+}
+
 /** Headline numbers for a range, with the previous equal-length window when the data fully covers it. */
 export function kpis(m, rangeId) {
   const w = rangeDays(m, rangeId);
@@ -165,8 +178,13 @@ export function series(m, rangeId) {
   const out = [];
   for (let d = w.from; d <= w.to; d += step) {
     const end = Math.min(d + step - 1, w.to);
-    const rows = m.txns.filter((t) => t.day >= d && t.day <= end && t.saved > 0);
-    out.push({ day: d, end, value: r2(sum(rows, (t) => t.saved)), count: rows.length, savers: new Set(rows.map((t) => t.userId)).size });
+    const all = m.txns.filter((t) => t.day >= d && t.day <= end);
+    const rows = all.filter((t) => t.saved > 0);
+    out.push({
+      day: d, end, value: r2(sum(rows, (t) => t.saved)), count: rows.length, savers: new Set(rows.map((t) => t.userId)).size,
+      // Transaction volume: every pasted payment, whatever happened to its round-up.
+      spend: r2(sum(all, (t) => t.amount)), payments: all.length, payers: new Set(all.map((t) => t.userId)).size,
+    });
   }
   return { step, points: out };
 }

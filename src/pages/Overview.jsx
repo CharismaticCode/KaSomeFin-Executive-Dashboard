@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { kpis, series, categories, plans, weekly, cohorts, attention } from "../lib/metrics.js";
+import { kpis, volume, series, categories, plans, weekly, cohorts, attention } from "../lib/metrics.js";
 import { money, moneyShort, int, dayLabel, dayLong } from "../lib/format.js";
 import { Card, Kpi, Delta, Bars, HList, Empty } from "../ui.jsx";
 
@@ -18,6 +18,8 @@ export default function Overview({ m, range, openSaver }) {
   }, [m]);
   const co = useMemo(() => cohorts(m, 6, 6), [m]);
   const att = useMemo(() => attention(m), [m]);
+  const vol = volume(k.cur);
+  const volPrev = k.prev ? volume(k.prev) : null;
   const vs = `vs previous ${k.window.days} days`;
   const anySweeps = m.sweeps.length > 0;
   const gaps = m.savers.filter((x) => x.viewGap != null && Math.abs(x.viewGap) >= 0.01);
@@ -88,6 +90,35 @@ export default function Overview({ m, range, openSaver }) {
         </Card>
       </div>
 
+      <Card
+        className="mt"
+        title="Transaction volume"
+        sub={`Every pasted payment, whatever happened to its round-up · ${s.step === 7 ? "per week" : "per day"}`}
+        right={<><b className="num" style={{ color: "var(--ink)", fontSize: 15 }}>{money(vol.value)}</b><br />{int(vol.payments)} payments · {k.window.label}</>}
+      >
+        <div className="vol">
+          <div>
+            {s.points.some((p) => p.spend > 0) ? (
+              <Bars
+                points={s.points.map((p) => ({
+                  key: p.day, value: p.spend,
+                  tip: <div>{s.step === 7 ? `Week of ${dayLabel(p.day)}` : dayLong(p.day)} · {p.payments} payments · {p.payers} savers</div>,
+                }))}
+                height={170} format={(v) => (v >= 1000 ? "K" + Number((v / 1000).toFixed(1)) + "k" : "K" + Math.round(v))}
+                axis={[first && dayLabel(first.day), mid && dayLabel(mid.day), last && (last.day === m.today ? "Today" : dayLabel(last.day))]}
+                highlightLast ariaLabel="Payment value over time"
+              />
+            ) : <Empty title="No payments in this period" />}
+          </div>
+          <div className="vol-stats">
+            <VolStat label="Payments" value={int(vol.payments)} delta={volPrev ? <Delta cur={vol.payments} prev={volPrev.payments} label={vs} /> : null} note={`${vol.paymentsPerSaver} per active saver`} />
+            <VolStat label="Value" value={moneyShort(vol.value)} delta={volPrev ? <Delta cur={vol.value} prev={volPrev.value} label={vs} /> : null} note={`${money(vol.perSaver)} per active saver`} />
+            <VolStat label="Average payment" value={money(vol.avgPayment)} delta={volPrev ? <Delta cur={vol.avgPayment} prev={volPrev.avgPayment} label={vs} /> : null} />
+            <VolStat label="Saved from volume" value={`${vol.saveRate.toFixed(1)}%`} note={`${money(k.cur.saved)} of ${moneyShort(vol.value)} became savings`} />
+          </div>
+        </div>
+      </Card>
+
       <div className="grid g3 mt">
         <Card title="Weekly active savers" sub="Savers who pasted at least one alert that week">
           <Bars
@@ -145,6 +176,16 @@ function Row({ c }) {
             </div>
       ))}
     </>
+  );
+}
+
+function VolStat({ label, value, delta, note }) {
+  return (
+    <div className="vol-stat">
+      <span>{label}</span>
+      <b className="num">{value}{delta}</b>
+      {note ? <small>{note}</small> : null}
+    </div>
   );
 }
 

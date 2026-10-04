@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildModel, kpis, series, categories, plans, weekly, cohorts, attention, interestRuns, toCsv, rangeDays, dayOf, change } from "../src/lib/metrics.js";
+import { buildModel, kpis, volume, series, categories, plans, weekly, cohorts, attention, interestRuns, toCsv, rangeDays, dayOf, change } from "../src/lib/metrics.js";
 
 // Sunday 4 Oct 2026, 18:00 in Lusaka.
 const NOW = new Date("2026-10-04T18:00:00+02:00").getTime();
@@ -180,5 +180,27 @@ describe("money", () => {
     const e = buildModel({}, NOW);
     const out = JSON.stringify([kpis(e, "30d"), series(e, "all"), categories(e, "7d"), weekly(e), cohorts(e), attention(e)]);
     expect(out).not.toMatch(/NaN|Infinity/);
+  });
+});
+
+describe("transaction volume", () => {
+  it("counts every payment, including skipped and reversed", () => {
+    const k = kpis(m, "7d");
+    const v = volume(k.cur);
+    expect(v.payments).toBe(5);
+    expect(v.value).toBe(237.9);          // 48.35 + 20 + 74.25 + 33 + 62.3
+    expect(v.avgPayment).toBe(47.58);
+    expect(v.perSaver).toBe(118.95);       // 2 active savers
+    expect(v.paymentsPerSaver).toBe(2.5);
+    expect(v.saveRate).toBe(4.8);          // 11.35 / 237.9
+  });
+  it("daily series carries volume and sums to the window", () => {
+    const s = series(m, "7d");
+    expect(s.points.reduce((a, p) => a + p.spend, 0)).toBeCloseTo(237.9, 2);
+    expect(s.points.reduce((a, p) => a + p.payments, 0)).toBe(5);
+    expect(s.points[6]).toMatchObject({ spend: 48.35, payments: 1, payers: 1 });
+  });
+  it("empty window is zero, not NaN", () => {
+    expect(volume(kpis(buildModel({}, NOW), "30d").cur)).toEqual({ payments: 0, value: 0, avgPayment: 0, perSaver: 0, paymentsPerSaver: 0, saveRate: 0 });
   });
 });
