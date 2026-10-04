@@ -98,8 +98,15 @@ export function buildModel(raw, now) {
     .filter((r) => ts(r.effective_date) != null && ts(r.effective_date) <= now)
     .sort((a, b) => ts(b.effective_date) - ts(a.effective_date));
 
+  // Password reset requests and codes (newest first). Codes past expiry count as expired.
+  const resets = (raw.password_resets || []).map((r) => {
+    const exp = ts(r.expires_at);
+    const status = r.status === "issued" && exp != null && exp < now ? "expired" : r.status;
+    return { id: r.id, userId: r.user_id, phone: r.phone, status, requestedAt: ts(r.requested_at), issuedAt: ts(r.issued_at), expiresAt: exp, usedAt: ts(r.used_at), attempts: r.attempts || 0 };
+  }).sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
+
   return {
-    now, today, txns, savers,
+    now, today, txns, savers, resets,
     saverById: new Map(savers.map((s) => [s.id, s])),
     sweeps: (raw.sweeps || []).map((s) => ({ ...s, amount: r2(s.amount) })).sort((a, b) => (ts(b.created_at) || 0) - (ts(a.created_at) || 0)),
     withdrawals: (raw.withdrawals || []).map((w) => ({ ...w, amount: r2(w.amount) })).sort((a, b) => (ts(b.requested_at) || 0) - (ts(a.requested_at) || 0)),
@@ -257,6 +264,10 @@ export function attention(m) {
   m.withdrawals.filter((w) => w.status === "requested" || w.status === "processing").forEach((w) => {
     const s = m.saverById.get(w.user_id);
     out.push({ kind: "withdrawal", level: "critical", saverId: w.user_id, title: `Withdrawal of K${r2(w.amount).toFixed(2)} ${w.status}`, body: `${s ? s.name : "A saver"} · ${w.destination || "no destination"}`, at: ts(w.requested_at) });
+  });
+  (m.resets || []).filter((r) => r.status === "requested").forEach((r) => {
+    const s = m.saverById.get(r.userId);
+    out.push({ kind: "reset", level: "critical", saverId: r.userId, title: `${s ? s.name : "A saver"} needs a password reset`, body: "Asked in the app · create a code and send it to them." , at: r.requestedAt });
   });
   m.savers.filter((s) => s.viewGap != null && Math.abs(s.viewGap) >= 0.01).forEach((s) => {
     out.push({ kind: "gap", level: "critical", saverId: s.id, title: `Balance mismatch for ${s.name}`, body: `The balances view differs from the ledger by K${s.viewGap.toFixed(2)}.` });

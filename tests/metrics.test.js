@@ -204,3 +204,17 @@ describe("transaction volume", () => {
     expect(volume(kpis(buildModel({}, NOW), "30d").cur)).toEqual({ payments: 0, value: 0, avgPayment: 0, perSaver: 0, paymentsPerSaver: 0, saveRate: 0 });
   });
 });
+
+describe("password resets", () => {
+  const withResets = buildModel({ ...raw, password_resets: [
+    { id: "r1", user_id: B, phone: "260971000002", status: "requested", requested_at: at("2026-10-04T10:00:00") },
+    { id: "r2", user_id: A, phone: "260971000001", status: "issued", requested_at: at("2026-10-02T10:00:00"), issued_at: at("2026-10-02T10:05:00"), expires_at: at("2026-10-03T10:05:00") },
+  ] }, NOW);
+  it("marks issued codes past expiry as expired, newest first", () => {
+    expect(withResets.resets.map((r) => [r.id, r.status])).toEqual([["r1", "requested"], ["r2", "expired"]]);
+  });
+  it("open requests go to the top of Needs attention", () => {
+    const a = attention(withResets);
+    expect(a.find((x) => x.kind === "reset")).toMatchObject({ level: "critical", saverId: B, title: "Daniel Khena needs a password reset" });
+  });
+});
