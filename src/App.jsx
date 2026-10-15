@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildModel, RANGES, attention } from "./lib/metrics.js";
-import { clock } from "./lib/format.js";
-import { loadAll } from "./data.js";
+import { clock, dateLabel } from "./lib/format.js";
+import { loadAll, saveCache, loadCache, snapshotText, parseSnapshot, unreachable } from "./data.js";
 import { MASTER_PASSWORD, AUTH_KEY } from "./config.js";
 import Overview from "./pages/Overview.jsx";
 import Savers, { SaverDrawer } from "./pages/Savers.jsx";
@@ -50,17 +50,50 @@ export default function App() {
   const [drawer, setDrawer] = useState(null);
   const [ledgerSaver, setLedgerSaver] = useState("all");
 
+  const [copyAt, setCopyAt] = useState(null); // set when showing a saved copy instead of live data
+
+  const showCopy = useCallback((copy, why) => {
+    setRaw(copy.raw); setCopyAt(copy.at || Date.now()); setSyncedAt(copy.at || null);
+    setNow(Date.now()); setErrors(why ? [why] : []);
+  }, []);
+
   const refresh = useCallback(async () => {
     setBusy(true);
     try {
       const { raw: r, errors: e } = await loadAll();
-      setRaw(r); setErrors(e); setSyncedAt(Date.now()); setNow(Date.now());
+      if (unreachable(e)) {
+        const cached = loadCache();
+        if (cached) showCopy(cached, "Can't reach the database right now, so this is the last saved copy.");
+        else setErrors(["Can't reach the database right now. Check the internet connection, or open a saved copy."]);
+        return;
+      }
+      const at = Date.now();
+      setRaw(r); setErrors(e); setSyncedAt(at); setNow(at); setCopyAt(null);
+      saveCache(r, at);
     } catch (e) {
       setErrors([e.message || String(e)]);
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [showCopy]);
+
+  const saveCopy = () => {
+    if (!raw) return;
+    const blob = new Blob([snapshotText(raw, syncedAt || Date.now())], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `kasomefin-ops-copy-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const openCopy = (file) => {
+    if (!file) return;
+    file.text().then((t) => {
+      let copy = null;
+      try { copy = parseSnapshot(t); } catch { /* not JSON */ }
+      if (copy) showCopy(copy, ""); else setErrors(["That file isn't a KaSomeFin dashboard copy."]);
+    });
+  };
 
   useEffect(() => {
     if (!authed) return undefined;
@@ -103,8 +136,15 @@ export default function App() {
         </nav>
         <div className="side-foot">
           <div className="sync">
-            <b><i className={busy ? "busy" : errors.length ? "err" : ""} />{busy ? "Syncing…" : errors.length ? "Sync problem" : "Live"}</b>
-            {syncedAt ? `Updated ${clock(syncedAt)} · every minute` : "Connecting…"}
+            <b><i className={busy ? "busy" : copyAt ? "err" : errors.length ? "err" : ""} />{busy ? "Syncing…" : copyAt ? "Saved copy" : errors.length ? "Sync problem" : "Live"}</b>
+            {copyAt ? `Data from ${dateLabel(copyAt)}, ${clock(copyAt)}` : syncedAt ? `Updated ${clock(syncedAt)} · every minute` : "Connecting…"}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button className="lock" onClick={saveCopy} disabled={!raw}>Save a copy</button>
+            <label className="lock" style={{ cursor: "pointer" }}>
+              Open a copy
+              <input type="file" accept="application/json,.json" style={{ display: "none" }} onChange={(e) => { openCopy(e.target.files[0]); e.target.value = ""; }} />
+            </label>
           </div>
           <button className="lock" onClick={() => { store.set(AUTH_KEY, null); setAuthed(false); }}>Lock dashboard</button>
         </div>
@@ -127,7 +167,15 @@ export default function App() {
           </div>
         </header>
 
-        {errors.length ? <div className="banner" role="alert">Some data couldn't load: {errors.join("; ")}. Figures that depend on it may be incomplete.</div> : null}
+        {copyAt ? (
+          <div className="banner" role="status" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>
+            {errors[0] ? errors[0] + " " : ""}Showing data from {dateLabel(copyAt)} at {clock(copyAt)}. Press Refresh to try for live data.
+          </div>
+        ) : errors.length ? (
+          <div className="banner" role="alert">
+            {/^(Can't reach|That file)/.test(errors[0]) ? errors.join(" ") : <>Some data couldn't load: {errors.join("; ")}. Figures that depend on it may be incomplete.</>}
+          </div>
+        ) : null}
 
         {!m ? (
           <div className="grid g4">{[0, 1, 2, 3].map((i) => <div key={i} className="skeleton" />)}</div>
