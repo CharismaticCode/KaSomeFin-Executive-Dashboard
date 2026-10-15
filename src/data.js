@@ -62,3 +62,34 @@ export async function loadAll() {
   });
   return { raw, errors };
 }
+
+// ---- Saved copies ---------------------------------------------------------
+// The last successful load is kept in this browser so the dashboard still opens
+// when the database (or the internet) can't be reached. A copy can also be saved
+// to a file and opened later, e.g. in the offline single-file dashboard.
+const CACHE_KEY = "ksf_ops_snapshot_v1";
+
+export function saveCache(raw, at) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ v: 1, at, raw })); return true; } catch { return false; }
+}
+
+export function loadCache() {
+  try { return parseSnapshot(localStorage.getItem(CACHE_KEY)); } catch { return null; }
+}
+
+export function snapshotText(raw, at) {
+  return JSON.stringify({ v: 1, app: "kasomefin-ops", at, raw });
+}
+
+/** Returns { at, raw } or null if the text isn't a dashboard copy. */
+export function parseSnapshot(text) {
+  if (!text) return null;
+  const s = JSON.parse(text);
+  if (!s || typeof s !== "object" || !s.raw || typeof s.raw !== "object" || !Array.isArray(s.raw.profiles)) return null;
+  const raw = {};
+  TABLES.forEach(([t]) => { raw[t] = Array.isArray(s.raw[t]) ? s.raw[t] : []; });
+  return { at: Number(s.at) || null, raw };
+}
+
+/** True when every required table failed, i.e. the database couldn't be reached at all. */
+export const unreachable = (errors) => errors.length >= TABLES.filter(([t]) => !OPTIONAL.has(t)).length;
